@@ -1,0 +1,12 @@
+<<<<<<< HEAD
+hi
+=======
+jozsef
+
+<<<<<<< HEAD
+eric
+=======
+something
+
+testerino cappucino
+>>>>>>> ba8afa862ef71a50376a30433215f3e3438f671c
