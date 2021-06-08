@@ -24,6 +24,8 @@ int main()
 	srand(time(0)); // seed random number generator.
 	ResetGrid();
 	Visit(1, 1);
+	Bool[1][0] = 0;
+	Bool[GRID_WIDTH-2][GRID_HEIGHT-1] = 0;
 	for (int y = 0; y < GRID_HEIGHT; ++y)
 	{
 		for (int x = 0; x < GRID_WIDTH; ++x)
