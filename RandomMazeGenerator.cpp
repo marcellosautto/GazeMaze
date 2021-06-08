@@ -12,13 +12,11 @@ using namespace std;
 #define SOUTH 2
 #define WEST 3
 //----GLOBAL VARIABLES------------------------------------------------
-char grid[GRID_WIDTH * GRID_HEIGHT];
 int Bool[GRID_WIDTH][GRID_HEIGHT];
 //----FUNCTION PROTOTYPES---------------------------------------------
 void ResetGrid();
 int IsInBounds(int x, int y);
 void Visit(int x, int y);
-//void PrintGrid();
 //----FUNCTIONS-------------------------------------------------------
 int main()
 {
