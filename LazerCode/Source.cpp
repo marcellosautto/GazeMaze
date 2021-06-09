@@ -1,11 +1,12 @@
 #include "pch.h"
 #include "Header.h"
 
+using namespace cv;
+
 CascadeClassifier face_cascade;
 
-int main(int argc, const char** argv)
+int source::runOpenCV(int argc, const char** argv, source &s)
 {
-	source s;
 	CommandLineParser parser(argc, argv,
 		"{help h||}"
 		"{face_cascade|Assets/xmlFiles/haarcascades/haarcascade_frontalface_alt.xml|Path to face cascade.}"
@@ -71,11 +72,8 @@ void source::detectAndDisplay(Mat frame)
 	motionDetect.emplace_back(center);
 	if (motionDetect.size() == 2)
 	{
-
 		detectMotionDirection();
 		motionDetect.resize(motionDetect.size() - 1);
-
-
 	}
 	//-- Show what you got
 	imshow("Capture - Face detection", frame);
