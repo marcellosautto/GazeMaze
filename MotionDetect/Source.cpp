@@ -2,13 +2,13 @@
 #include "Header.h"
 
 CascadeClassifier face_cascade;
-CascadeClassifier eyes_cascade;
 
 int main(int argc, const char** argv)
 {
 	source s;
 	CommandLineParser parser(argc, argv,
-		"{face_cascade|D:/VS_Projects/LaserEyes/opencv/build/etc/haarcascades/haarcascade_frontalface_alt.xml|Path to face cascade.}"
+		"{help h||}"
+		"{face_cascade|data/haarcascades/haarcascade_frontalface_alt.xml|Path to face cascade.}"
 		"{camera|0|Camera device number.}");
 	parser.about("\nThis program demonstrates using the cv::CascadeClassifier class to detect objects (Face + eyes) in a video stream.\n"
 		"You can use Haar or LBP features.\n\n");
@@ -17,7 +17,7 @@ int main(int argc, const char** argv)
 	cv::String face_cascade_name = samples::findFile(parser.get<cv::String>("face_cascade"));
 
 	//-- 1. Load the cascades
-	if (!face_cascade.load(face_cascade_name))
+	if (!face_cascade.load(parser.get<cv::String>("face_cascade")))
 	{
 		cout << "--(!)Error loading face cascade\n";
 		return -1;
@@ -33,9 +33,14 @@ int main(int argc, const char** argv)
 		return -1;
 	}
 
-	Mat frame;
+	Mat frame, frameInv;
+
 	while (capture.read(frame))
 	{
+		//cv::flip(frame, frameInv, 1);
+
+		//rectangle(frameInv, p1, p2, Scalar(255, 0, 0), 2, 0, 0);
+
 		if (frame.empty())
 		{
 			cout << "--(!) No captured frame -- Break!\n";
@@ -61,16 +66,15 @@ void source::detectAndDisplay(Mat frame)
 	faces.resize(1);
 	face_cascade.detectMultiScale(frame_gray, faces);
 
-	for (size_t i = 0; i < faces.size(); i++)
+	Point center(faces[0].x + faces[0].width / 2, faces[0].y + faces[0].height / 2);
+	ellipse(frame, center, Size(faces[0].width / 2, faces[0].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+	motionDetect.emplace_back(center);
+	if (motionDetect.size() == 2)
 	{
-		Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-		ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
-		motionDetect.emplace_back(center);
-		if (motionDetect.size() == 2)
-		{
-			detectMotionDirection();
-			motionDetect.resize(motionDetect.size() - 1);
-		}
+
+		detectMotionDirection();
+		motionDetect.resize(motionDetect.size() - 1);
+
 
 	}
 	//-- Show what you got
@@ -84,20 +88,19 @@ void source::detectMotionDirection()
 
 	if (displacementX > 50 || displacementX < -50) //if the movement is signifigant, record it
 	{
-		if (displacementX > -50 && lastDirection != 'L')
+		if (displacementX < -50 && lastDirection != 'L')
 		{
 			lastDirection = 'L';
 			system("cls");
 			cout << "LEFT" << endl;
 		}
 
-		else if (displacementX < 50 && lastDirection != 'R')
+		else if (displacementX > 50 && lastDirection != 'R')
 		{
 			lastDirection = 'R';
 			system("cls");
 			cout << "RIGHT" << endl;
 		}
-
 
 	}
 
@@ -117,7 +120,13 @@ void source::detectMotionDirection()
 			cout << "DOWN" << endl;
 		}
 	}
+	else
+	{
+		lastDirection = '0';
+		system("cls");
+		cout << "AT ORIGIN" << endl;
+	}
 
-	
+
 
 }
