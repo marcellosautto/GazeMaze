@@ -6,7 +6,6 @@ bool menuSwitch::toMenu()
 {
     menuScreen mW;
     return mW.menuWindow();
-
 }
 
 bool menuSwitch::toGame()
@@ -15,12 +14,19 @@ bool menuSwitch::toGame()
     return gW.gameWindow();
 }
 
+bool menuSwitch::toScore()
+{
+	ScoreScreen sW;
+	return sW.ScoreWindow();
+}
+
 int main(int argc, const char** argv)
 {
     source s;
     menuSwitch mS;
     //mS.toGame();
-    s.runOpenCV(argc, argv, s);
+    //s.runOpenCV(argc, argv, s);
+	mS.toScore();
 
     return 0;
 }
