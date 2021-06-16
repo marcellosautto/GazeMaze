@@ -1,17 +1,22 @@
 #pragma once
 #include "pch.h"
-#include "gameScreen.h"
-#include "menuScreen.h"
-#include "objDet.h"
+#include "HighScore.h"
+#include "PhysicsObj.h"
+#include "Physics.h"
+#include "SpriteManager.h"
+#include "Button.h"
+#include "MainMenu.h"
+#include "ScoreScreen.h"
+#include "About.h"
+#include "GameInterface.h"
+
 
 class menuSwitch {
 
 public:
 
-	bool toGame(),
-		toMenu();
-
+	void SFMLLoader(int argc, const char** argv);
 
 private:
-
+	const int frameRate = 256;
 };

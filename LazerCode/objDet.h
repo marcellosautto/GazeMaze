@@ -5,22 +5,32 @@
 class objDet {
 
 public:
-	objDet();
 
-	char lastDirectionF, lastDirectionH;
+	objDet(int argc, const char** argv);
+
+	//driver
+	std::array<bool, 5> runMotionDetect();
+
+	std::array<bool, 5> detectMotionDirectionFace(cv::Mat frame);
+	void detectMotionHand(cv::Mat frame);
+	void detectAndDisplay(cv::Mat frame, cv::Mat crop);
+
+	
+
+
+private:
+
+	cv::VideoCapture capture;
+
+	char lastDirectionF;
+	bool justAttacked;
+
 	std::vector<cv::Point2d> motionDetectF;
-	std::vector<cv::Point2d> motionDetectH;
+	std::vector<int> scaleInc;
 
-	cv::Ptr<cv::BackgroundSubtractor> pBackSub;
+	std::array<bool, 5> movements;
 
-	void detectAndDisplayFace(cv::Mat frame);
-	void detectMotionDirectionFace(cv::Mat frame);
-	int runOpenCVFaceDetect(int argc, const char** argv, objDet&od);
-
-	void detectAndDisplayHand(cv::Mat frame);
-	void detectMotionDirectionHand();
-	int runOpenCVHandDetect(int argc, const char** argv, objDet& od);
-
-	cv::Mat getMedian(std::vector<cv::Mat> vec);
-	int calcMedian(vector<int>elements);
+	//cv::Ptr<cv::BackgroundSubtractor> pBackSub;
+	//cv::Mat getMedian(std::vector<cv::Mat> vec);
+	//int calcMedian(vector<int>elements);
 };
