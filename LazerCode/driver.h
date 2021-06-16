@@ -2,16 +2,16 @@
 #include "pch.h"
 #include "gameScreen.h"
 #include "menuScreen.h"
-#include "Header.h"
-#include "ScoreScreen.h"
+#include "objDet.h"
 
 class menuSwitch {
 
 public:
 
 	bool toGame(),
-		toScore(),
 		toMenu();
+
+
 private:
 
 };

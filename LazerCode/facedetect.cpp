@@ -5,6 +5,7 @@ using namespace cv;
 
 CascadeClassifier face_cascade;
 
+
 int objDet::runOpenCVFaceDetect(int argc, const char** argv, objDet&od)
 {
 	CommandLineParser parser(argc, argv,
@@ -48,7 +49,7 @@ int objDet::runOpenCVFaceDetect(int argc, const char** argv, objDet&od)
 			break;
 		}
 		//-- 3. Apply the classifier to the frame
-		od.detectAndDisplayFace(frame);
+		od.detectAndDisplayHand(frame);
 		if (waitKey(10) == 27)
 		{
 			break; // escape
@@ -56,6 +57,7 @@ int objDet::runOpenCVFaceDetect(int argc, const char** argv, objDet&od)
 	}
 	return 0;
 }
+
 void objDet::detectAndDisplayFace(Mat frame)
 {
 	Mat frame_gray;
@@ -74,7 +76,7 @@ void objDet::detectAndDisplayFace(Mat frame)
 		motionDetectF.emplace_back(center);
 		if (motionDetectF.size() == 2)
 		{
-			detectMotionDirectionFace(frame);
+			detectAndDisplayFace(frame);
 			motionDetectF.resize(motionDetectF.size() - 1);
 		}
 	}
