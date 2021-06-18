@@ -10,6 +10,7 @@ class GameInterface
 private:
 
 	void drawMaze(sf::RenderTarget& renderTarget),
+		drawVideo(sf::RenderTarget& renderTarget),
 		move(COORD newPos),
 		input();
 
@@ -17,10 +18,15 @@ private:
 	prepGame* pG = NULL;
 	objDet* od = NULL;
 
+	sf::Text videoTxt;
+	sf::Font font;
+
+
 public:
 
 	GameInterface(int& _menu, objDet* odt);
 	void Draw(sf::RenderWindow& _window, float _elapsedTime);
+	
 
 	struct player {
 

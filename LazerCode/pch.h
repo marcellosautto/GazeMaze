@@ -1,5 +1,9 @@
 #pragma once
 
+//Define
+#define PROG_NAME "Gazer_Eyes"
+#define NOMINMAX
+
 //OpenCV Lib
 #include<opencv2/opencv.hpp>
 #include "opencv2/objdetect.hpp"
@@ -23,14 +27,13 @@
 #include<string>
 #include<fstream>
 #include <random>
+#include <stack>
+#include <stdio.h>
+#include <sstream>
+#include <unordered_map>
 
 
 using namespace std;
-
-
-//Define
-
-#define PROG_NAME "Gazer_Eyes"
 
 //Global Commands
 #ifndef GUARD_H

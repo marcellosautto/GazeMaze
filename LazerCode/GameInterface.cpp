@@ -1,18 +1,29 @@
 #include "pch.h"
 #include "GameInterface.h"
 
+#define VIDEO_POS_X 1152
+#define VIDEO_POS_Y 240
+
 GameInterface::GameInterface(int& _menu, objDet* odt) {
 
 	pG = new prepGame();
 	od = odt;
+	font.loadFromFile("Assets/Font/ponde___.ttf");
+	videoTxt.setFont(font);
+	videoTxt.setString("MOTION CAPTURE DISPLAY");
+	videoTxt.setStyle(sf::Text::Style::Underlined);
+	videoTxt.setCharacterSize(36);
+
 }
 
 void GameInterface::Draw(sf::RenderWindow& _window, float _elapsedTime) {
 
 	input();
 	drawMaze(_window);
+	drawVideo(_window);
 	p.playerS.DrawSprites(_window);
 }
+
 
 void GameInterface::drawMaze(sf::RenderTarget& renderTarget)
 {
@@ -24,6 +35,14 @@ void GameInterface::drawMaze(sf::RenderTarget& renderTarget)
 			renderTarget.draw(pG->mazeS[y][x]);
 		}
 	}
+}
+
+void GameInterface::drawVideo(sf::RenderTarget& renderTarget)
+{
+	od->videoSprite.setPosition(VIDEO_POS_X, VIDEO_POS_Y);
+	videoTxt.setPosition(VIDEO_POS_X, VIDEO_POS_Y / 2);
+	renderTarget.draw(od->videoSprite);
+	renderTarget.draw(videoTxt);
 }
 
 // Removes the player physics from the list of global physics objects
@@ -75,5 +94,5 @@ void GameInterface::input()
 		if (userInput[3])
 			move({ short(p.pos.X + 50), p.pos.Y });
 	}
-	
+
 }

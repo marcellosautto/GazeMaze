@@ -2,7 +2,7 @@
 #include "driver.h"
 #include "objDet.h"
 
-void menuSwitch::SFMLLoader(int argc, const char** argv){
+void menuSwitch::SFMLLoader(int argc, const char** argv) {
 	// Create
 	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Laser Eyes"); // Opens a window
 
@@ -15,7 +15,8 @@ void menuSwitch::SFMLLoader(int argc, const char** argv){
 	int pmenu = 0;
 
 	//Initialize Motion-Capture
-	objDet od (argc, argv);
+	objDet od(argc, argv);
+	bool preGameCheck = false;
 
 	// Initialize the game menus
 	ScoreScreen scoreScreen(menu);
@@ -29,7 +30,7 @@ void menuSwitch::SFMLLoader(int argc, const char** argv){
 	sf::Clock clock;
 	float nextFrameTime = 1000 / frameRate;
 
-	
+
 
 	while (window.isOpen()) { // This loop runs as long as the window stays open
 		sf::Event event;
@@ -52,6 +53,19 @@ void menuSwitch::SFMLLoader(int argc, const char** argv){
 				mainMenu.Draw(window);
 				break;
 			case 1: // play game menu
+				while (!preGameCheck)
+				{
+					bool isCalibrated = od.calibrate(window);
+					window.clear();
+					if (isCalibrated)
+						preGameCheck = PlaySound(TEXT("Assets/Audio/Success.wav"), NULL, SND_SYNC);
+					else
+					{
+						preGameCheck = !(PlaySound(TEXT("Assets/Audio/Failure.wav"), NULL, SND_SYNC));
+						PlaySound(TEXT("Assets/Audio/tips.wav"), NULL, SND_SYNC);
+					}
+					system("cls");
+				}
 				window.clear(sf::Color(70, 130, 255));
 				gameInterface.Draw(window, elpasedTime);
 				break;
@@ -64,11 +78,11 @@ void menuSwitch::SFMLLoader(int argc, const char** argv){
 				//	window.clear(sf::Color::Black);
 				//	about.Draw(window);
 				//	break;
-				case 3: // quit the game
-					exit(EXIT_SUCCESS);
-				default:
-					break;
-				}
+			case 3: // quit the game
+				exit(EXIT_SUCCESS);
+			default:
+				break;
+			}
 
 
 			// set the previous menu
@@ -86,7 +100,6 @@ int main(int argc, const char** argv)
 {
 	menuSwitch mS;
 	mS.SFMLLoader(argc, argv);
-	//od.runMotionDetect();
 
 	return 0;
 }
