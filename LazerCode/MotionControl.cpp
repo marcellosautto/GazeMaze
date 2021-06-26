@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "objDet.h"
 
+#define FRAME_WIDTH 1920
+#define FRAME_HEIGHT 1080
 using namespace cv;
 
 CascadeClassifier face_cascade;
@@ -11,63 +13,105 @@ objDet::objDet(int argc, const char** argv)
 	justAttacked = false;
 	calibrationArray = { false };
 
+
+
+	pregameBGIMG.loadFromFile("Assets/Menus/menuBack.png");
+
+	if (!pregameBGTexture.loadFromImage(pregameBGIMG))
+		errorMessageExit("ERROR: pregame background texture failed to load");
+
+	pregameBGSprite.setTexture(pregameBGTexture);
+
 	CommandLineParser parser(argc, argv,
-		"{face_cascade_TRAINED|Assets/cascadeFace/cascade.xml|Path to face cascade.}"
-		"{hand_cascade|Assets/cascadeHand/palm_v4.xml|Path to hand cascade.}"
-		"{camera|0|Camera device number.}");
+		"{face_cascade_TRAINED|Assets/Cascade/FaceCascade.xml|Path to face cascade.}"
+		"{hand_cascade|Assets/Cascade/HandCascade.xml|Path to hand cascade.}");
 
 	cv::String face_cascade_name = samples::findFile(parser.get<cv::String>("face_cascade_TRAINED"));
 	cv::String hand_cascade_name = samples::findFile(parser.get<cv::String>("hand_cascade"));
 
 	//-- 1. Load the cascades
 	if (!face_cascade.load(parser.get<cv::String>("face_cascade_TRAINED")))
-	{
-		cout << "--(!)Error loading face cascade\n";
-		exit(EXIT_FAILURE);
-	};
+		errorMessageExit("--(!)Error loading face cascade");
+
 	if (!hand_cascade.load(parser.get<cv::String>("hand_cascade")))
-	{
-		cout << "--(!)Error loading hand cascade\n";
-		exit(EXIT_FAILURE);
-	};
-	int camera_device = parser.get<int>("camera");
+		errorMessageExit("--(!)Error loading hand cascade");
 
-	//-- 2. Read the video stream
-	capture.open(camera_device);
 
-	if (!capture.isOpened())
-	{
-		cout << "--(!)Error opening video capture\n";
-		exit(EXIT_FAILURE);
-	}
+	if (!leftDetB.loadFromFile("Assets/Audio/Left_Detected.wav") ||
+		!rightDetB.loadFromFile("Assets/Audio/Right_Detected.wav") ||
+		!upDetB.loadFromFile("Assets/Audio/Up_Detected.wav") ||
+		!downDetB.loadFromFile("Assets/Audio/Down_Detected.wav") ||
+		!oriDetB.loadFromFile("Assets/Audio/Origin_Detected.wav") ||
+		!failB.loadFromFile("Assets/Audio/Failure.wav") ||
+		!succB.loadFromFile("Assets/Audio/Success.wav") ||
+		!switchToKeyboardB.loadFromFile("Assets/Audio/keyboard_switch.wav") ||
+		!switchToMotionB.loadFromFile("Assets/Audio/motion_switch.wav"))
+		errorMessageExit("Sound Load Fail");
+
+	leftDetS.setBuffer(leftDetB); rightDetS.setBuffer(rightDetB); upDetS.setBuffer(upDetB);
+	downDetS.setBuffer(downDetB); oriDetS.setBuffer(oriDetB); failS.setBuffer(failB); succS.setBuffer(succB);
+	switchToKeyboardS.setBuffer(switchToKeyboardB);
+	switchToMotionS.setBuffer(switchToMotionB);
+
+	/*---TEXT---*/
+
+	if (!font_ponde.loadFromFile("Assets/Font/ponde___.ttf"))
+		errorMessageExit("Failed To Load Font");
+
+	pregame_origin_text.setFont(font_ponde);
+	pregame_up_text.setFont(font_ponde);
+	pregame_down_text.setFont(font_ponde);
+	pregame_left_text.setFont(font_ponde);
+	pregame_right_text.setFont(font_ponde);
+
+
+	pregame_origin_text.setString("PRESS 'O' TO SET YOUR ORIGIN POINT");
+	pregame_up_text.setString("UP");
+	pregame_down_text.setString("DOWN");
+	pregame_left_text.setString("LEFT");
+	pregame_right_text.setString("RIGHT");
+
+
+	pregame_origin_text.setCharacterSize(60);
+	pregame_up_text.setCharacterSize(60);
+	pregame_down_text.setCharacterSize(60);
+	pregame_left_text.setCharacterSize(60);
+	pregame_right_text.setCharacterSize(60);
+
+	pregame_origin_text.setFillColor(sf::Color::White);
+	pregame_up_text.setFillColor(sf::Color::Red);
+	pregame_down_text.setFillColor(sf::Color::Red);
+	pregame_left_text.setFillColor(sf::Color::Red);
+	pregame_right_text.setFillColor(sf::Color::Red);
+
+
+	pregame_origin_text.setPosition(100, 150);
+	pregame_up_text.setPosition(930, 150);
+	pregame_down_text.setPosition(900, 800);
+	pregame_left_text.setPosition(350, 500);
+	pregame_right_text.setPosition(1400, 500);
 
 }
 
 
-std::array<bool, 5> objDet::runMotionDetect()
+std::array<bool, 5> objDet::runMotionDetect(std::array<bool, 5> userInput)
 {
-
-	Mat frame, frameInv;
+	Mat frame, frameInv, cropFrame;
 
 	capture.read(frameInv);
 	cv::flip(frameInv, frame, 1);
 
 	if (frame.empty())
 	{
-		cout << "--(!) No captured frame -- Break!\n";
+		message("--(!)Error opening video capture", "ERROR");
 		return { false, false, false, false, true };
 	}
+
 	//-- 3. Apply the classifier to the frame
-	//cv::rectangle(frame, Point(50, 50), Point(300, 300), Scalar(0, 255, 0), 2);
-	//cv::Mat cropImg = frame(Range(50, 300), Range(50, 300));
-	//detectAndDisplay(frame, cropImg);
 	Mat frame_gray, frame_gray_CROPPED;
 	GaussianBlur(frame, frame, Size(3, 3), 0);
 	cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
 	equalizeHist(frame_gray, frame_gray);
-
-	//cvtColor(cropImg, frame_gray_CROPPED, COLOR_BGR2GRAY);
-	//equalizeHist(frame_gray_CROPPED, frame_gray_CROPPED);
 
 	//-- Detect faces
 	std::vector<cv::Rect> faces;
@@ -76,65 +120,37 @@ std::array<bool, 5> objDet::runMotionDetect()
 	for (int i = 0; i < faces.size(); i++)
 	{
 		Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-		ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 125, 0), 4); 
-		rectangle(frame, originRect, Scalar(255, 0, 255), 3, 1);
+		ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+		cv::rectangle(frame, originRect, Scalar(255, 0, 0), 2);
 		motionDetectF.emplace_back(center);
-		if (motionDetectF.size() == 20)
+
+		if (motionDetectF.size() == movementsPerSecond)
 		{
 
-			int displacementX = motionDetectF.at(19).x - motionDetectF.at(0).x;
-			int displacementY = motionDetectF.at(19).y - motionDetectF.at(0).y;
+			int displacementX = motionDetectF.at(movementsPerSecond - 1).x - originPoint.x;
+			int displacementY = motionDetectF.at(movementsPerSecond - 1).y - originPoint.y;
 
-			motionDetectF.resize(motionDetectF.size() - 10);
+			motionDetectF.resize(0);
 
-			if (displacementX > 15 || displacementX < -15) //if the movement is signifigant, record it
+			if ((displacementX > 15 || displacementX < -15) && abs(displacementX) > abs(displacementY))  //if the x movement is signifigant, record it
 			{
-				if (displacementX < -15/* && lastDirectionF != 'L'*/)
-				{
-
-					lastDirectionF = 'L';
-					system("cls");
-					cout << "LEFT" << endl;
+				if (displacementX < -15)
 					return std::array<bool, 5>{ false, false, true, false, false };
-				}
 
-				else if (displacementX > 15 /*&& lastDirectionF != 'R'*/)
-				{
-					lastDirectionF = 'R';
-					system("cls");
-					cout << "RIGHT" << endl;
+				else if (displacementX > 15)
 					return std::array<bool, 5> { false, false, false, true, false };
-				}
-
 			}
 
-			else if (displacementY > 15 || displacementY < -15)
+			else if ((displacementY > 15 || displacementY < -15) && abs(displacementX) < abs(displacementY)) //if the y movement is signifigant, record it
 			{
-				if (displacementY < -15 /*&& lastDirectionF != 'U'*/)
-				{
-					lastDirectionF = 'U';
-					system("cls");
-					cout << "UP" << endl;
+				if (displacementY < -15)
 					return std::array<bool, 5> { true, false, false, false, false };
-				}
 
-				else if (displacementY > 15 /*&& lastDirectionF != 'D'*/)
-				{
-					lastDirectionF = 'D';
-					system("cls");
-					cout << "DOWN" << endl;
+				else if (displacementY > 15)
 					return std::array<bool, 5> { false, true, false, false, false };
-				}
 			}
 			else
-			{
-				lastDirectionF = 0;
-				system("cls");
-				cout << "AT ORIGIN" << endl;
 				return std::array<bool, 5> { false, false, false, false, true };
-			}
-
-
 
 		}
 
@@ -165,202 +181,189 @@ std::array<bool, 5> objDet::runMotionDetect()
 	videoImg.create(frame.cols, frame.rows, frame.ptr());
 
 	if (!videoTexture.loadFromImage(videoImg))
-	{
-		cout << "ERROR: texture failed to load\n";
-		exit(EXIT_FAILURE);
-	}
+		errorMessageExit("ERROR: texture failed to load");
 
 	videoSprite.setTexture(videoTexture);
-	
 
+	return userInput;
 	//imshow("Frame", frame);
 
 }
 
+bool objDet::cameraSwitch(bool useKeyboard)
+{
+	int camera_device = 0;
+	//capture.open(camera_device);
+	//-- 2. Read the video stream
+	if (useKeyboard == false && !capture.isOpened()) //if the user wants to use the motion controls and isnt using motion controls already
+	{
+		capture.open(camera_device);
+		if (capture.isOpened())
+		{
+			//setFPS();
+			switchToMotionS.play();
+			return false;
+		}
+		else
+		{
+			switchToKeyboardS.play();
+			return true;
+		}
+
+		//errorMessageExit("--(!)Error opening video capture");
+
+	}
+	else if (useKeyboard == true)
+	{
+		switchToKeyboardS.play();
+		//cout << "USING DEFAULT KEYBOARD CONTROLS" << endl;
+		if (capture.isOpened())
+			capture.release();
+		return true;
+	}
+	else
+		return useKeyboard;
+
+
+}
 
 bool objDet::calibrate(sf::RenderWindow& _window)
 {
-	Mat frame, frameInv;
+	Mat frame, frameInv, cropFrame;
 
-	while (!calibrationArray[0] || !calibrationArray[1] || !calibrationArray[2] || !calibrationArray[3] || !calibrationArray[4])
+	if (!calibrationArray[0] || !calibrationArray[1] || !calibrationArray[2] || !calibrationArray[3] || !calibrationArray[4])
 	{
+		_window.clear();
+		_window.draw(pregameBGSprite);
 
 		capture.read(frameInv);
 		cv::flip(frameInv, frame, 1);
 
 		if (frame.empty())
-		{
-			cout << "--(!) No captured frame -- Break!\n";
-			exit(EXIT_FAILURE);
-		}
+			errorMessageExit("--(!) No captured frame -- Break!");
+
 		//-- 3. Apply the classifier to the frame
-		//cv::rectangle(frame, Point(50, 50), Point(300, 300), Scalar(0, 255, 0), 2);
-		//cv::Mat cropImg = frame(Range(50, 300), Range(50, 300));
-		//detectAndDisplay(frame, cropImg);
 		Mat frame_gray, frame_gray_CROPPED;
 		GaussianBlur(frame, frame, Size(3, 3), 0);
 		cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
 		equalizeHist(frame_gray, frame_gray);
 
-		//cvtColor(cropImg, frame_gray_CROPPED, COLOR_BGR2GRAY);
-		//equalizeHist(frame_gray_CROPPED, frame_gray_CROPPED);
-
 		//-- Detect faces
 		std::vector<cv::Rect> faces;
 		face_cascade.detectMultiScale(frame_gray, faces);
 
+
 		for (int i = 0; i < faces.size(); i++)
 		{
 			Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-			ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
-			motionDetectF.emplace_back(center);
-			if (motionDetectF.size() == 20)
+
+			if (!calibrationArray[4] && sf::Keyboard::isKeyPressed(sf::Keyboard::O))
 			{
+				oriDetS.play();
+				pregame_origin_text.setFillColor(sf::Color::Green);
+				_window.draw(pregame_origin_text);
+				_window.draw(videoSprite);
+				_window.display();
 
-				int displacementX = motionDetectF.at(19).x - motionDetectF.at(0).x;
-				int displacementY = motionDetectF.at(19).y - motionDetectF.at(0).y;
+				Sleep(1200);
+				calibrationArray[4] = true;
+				originPoint = center;
+				originRect = faces[i];
+			}
+			else if (!calibrationArray[4])
+				_window.draw(pregame_origin_text);
 
-				motionDetectF.resize(motionDetectF.size() - 10);
+			cv::ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+			cv::rectangle(frame, originRect, Scalar(255, 0, 0), 3);
 
-				if (displacementX > 15 || displacementX < -15) //if the movement is signifigant, record it
+			if (motionDetectF.size() < movementsPerSecond && calibrationArray[4])
+				motionDetectF.emplace_back(center);
+
+			if (motionDetectF.size() == movementsPerSecond && calibrationArray[4])
+			{
+				int displacementX = motionDetectF.at(movementsPerSecond - 1).x - originPoint.x;
+				int displacementY = motionDetectF.at(movementsPerSecond - 1).y - originPoint.y;
+
+				motionDetectF.resize(0);
+
+				if ((displacementX > 15 || displacementX < -15) && abs(displacementX) > abs(displacementY)) //if the movement is signifigant, record it
 				{
 					if (displacementX < -15 && !calibrationArray[2])
 					{
-
-						calibrationArray[2] = PlaySound(TEXT("Assets/Audio/Left_Detected.wav"), NULL, SND_SYNC); //left calibrated
-						//system("cls");
-						cout << "LEFT CALIBRATED" << endl;
+						leftDetS.play();
+						calibrationArray[2] = true; //left calibrated
+						pregame_left_text.setFillColor(sf::Color::Green);
 					}
 
 					else if (displacementX > 15 && !calibrationArray[3])
 					{
-						calibrationArray[3] = PlaySound(TEXT("Assets/Audio/Right_Detected.wav"), NULL, SND_SYNC);
-						//system("cls");
-						cout << "RIGHT CALIBRATED" << endl;
-
+						rightDetS.play();
+						calibrationArray[3] = true;
+						pregame_right_text.setFillColor(sf::Color::Green);
 					}
 
 				}
 
-				else if (displacementY > 15 || displacementY < -15)
+				else if ((displacementY > 15 || displacementY < -15) && abs(displacementX) < abs(displacementY))
 				{
 					if (displacementY < -15 && !calibrationArray[0])
 					{
-						calibrationArray[0] = PlaySound(TEXT("Assets/Audio/Up_Detected.wav"), NULL, SND_SYNC);
-						//system("cls");
-						cout << "UP CALIBRATED" << endl;
-
+						upDetS.play();
+						calibrationArray[0] = true;
+						pregame_up_text.setFillColor(sf::Color::Green);
 					}
 
 					else if (displacementY > 15 && !calibrationArray[1])
 					{
-						calibrationArray[1] = PlaySound(TEXT("Assets/Audio/Down_Detected.wav"), NULL, SND_SYNC);
-						//system("cls");
-						cout << "DOWN CALIBRATED" << endl;
-
+						downDetS.play();
+						calibrationArray[1] = true;
+						pregame_down_text.setFillColor(sf::Color::Green);
 					}
 				}
-				else if (!calibrationArray[4])
-				{
-					calibrationArray[4] = PlaySound(TEXT("Assets/Audio/Origin_Detected.wav"), NULL, SND_SYNC);
-					//system("cls");
-					cout << "ORIGIN CALIBRATED" << endl;
 
-					originRect = faces[i];
-					rectangle(frame, originRect, Scalar(255, 125, 0), 3, 1);
-
-				}
 
 			}
 		}
 
-
-	
-		//imshow("PREGAME CHECK- Press 'ESC' If Configuration Errors Occur", frame);
 		cvtColor(frame, frame, cv::COLOR_BGR2RGBA);
 		videoImg.create(frame.cols, frame.rows, frame.ptr());
 
 		if (!videoTexture.loadFromImage(videoImg))
-		{
-			cout << "ERROR: texture failed to load\n";
-			exit(EXIT_FAILURE);
-		}
+			errorMessageExit("ERROR: texture failed to load");
 
 		videoSprite.setTexture(videoTexture);
-		videoSprite.setPosition(540, 240);
-		sf::RenderTarget& renderTarget = _window;
-		renderTarget.draw(videoSprite);
+		videoSprite.setPosition(650, 275);
+
+		if (calibrationArray[4])
+		{
+			_window.draw(pregame_left_text);
+			_window.draw(pregame_right_text);
+			_window.draw(pregame_up_text);
+			_window.draw(pregame_down_text);
+		}
+
+		_window.draw(videoSprite);
 		_window.display();
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) // escape
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) // escape
 		{
-			//destroyWindow("PREGAME CHECK- Press 'ESC' If Configuration Errors Occur");
-			//_window.close();
 			calibrationArray = { false };
+			failS.play();
 			return false;
-			//break; 
 		}
-		_window.clear();
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) // escape
+			exit(EXIT_FAILURE);
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::K))
+			return true;
+
+		return false;
 	}
 
-	//destroyWindow("PREGAME CHECK- Press 'ESC' If Configuration Errors Occur");
+	Sleep(1200);
+	succS.play();
 	return true;
-}
-
-std::array<bool, 5> objDet::detectMotionDirectionFace(cv::Mat frame)
-{
-	int displacementX = motionDetectF.at(1).x - motionDetectF.at(0).x;
-	int displacementY = motionDetectF.at(1).y - motionDetectF.at(0).y;
-
-	if ((displacementX > 15 || displacementX < -15)) //if the movement is signifigant, record it
-	{
-		if (displacementX < -15 && lastDirectionF != 'L')
-		{
-
-			lastDirectionF = 'L';
-			system("cls");
-			cout << "LEFT" << endl;
-			return { false, false, true, false };
-		}
-
-		else if (displacementX > 15 && lastDirectionF != 'R')
-		{
-			lastDirectionF = 'R';
-			system("cls");
-			cout << "RIGHT" << endl;
-			return { false, false, false, true };
-		}
-
-	}
-
-	else if ((displacementY > 15 || displacementY < -15))
-	{
-		if (displacementY < -15 && lastDirectionF != 'U')
-		{
-			lastDirectionF = 'U';
-			system("cls");
-			cout << "UP" << endl;
-			return { true, false, false, false };
-		}
-
-		else if (displacementY > 15 && lastDirectionF != 'D')
-		{
-			lastDirectionF = 'D';
-			system("cls");
-			cout << "DOWN" << endl;
-			return { false, true, false, false };
-		}
-	}
-	else
-	{
-		lastDirectionF = 0;
-		system("cls");
-		cout << "AT ORIGIN" << endl;
-
-		return { false, false, false, false };
-	}
-
-
-
 }
 
 void objDet::detectMotionHand(cv::Mat frame)
@@ -369,20 +372,57 @@ void objDet::detectMotionHand(cv::Mat frame)
 
 	if (radiusChange > 15 && !justAttacked) //attack
 	{
-		system("cls");
-		cout << "ATTACK" << endl;
+		//	system("cls");
+		//	cout << "ATTACK" << endl;
 		justAttacked = true;
 
 	}
 
 	else if (radiusChange < 15) //character goes back to stand by
 	{
-		system("cls");
-		cout << "STAND BY" << endl;
+		//	system("cls");
+		//	cout << "STAND BY" << endl;
 		justAttacked = false;
 	}
-
-
-
 }
 
+void objDet::setFPS(int cam_device)
+{
+	VideoCapture grabFPS(cam_device);
+
+
+	// Number of frames to capture
+	int num_frames = 120;
+
+	// Start and end times
+	time_t start, end;
+
+	// Variable for storing video frames
+	Mat frame;
+
+	//cout << "Capturing " << num_frames << " frames" << endl;
+
+	// Start time
+	time(&start);
+
+	// Grab a few frames
+	for (int i = 0; i < num_frames; i++)
+	{
+		grabFPS >> frame;
+	}
+
+	// End Time
+	time(&end);
+
+	// Time elapsed
+	double seconds = difftime(end, start);
+	cout << "Time taken : " << seconds << " seconds" << endl;
+
+	// Calculate frames per second
+	fps = (int)(num_frames / seconds);
+	movementsPerSecond = fps / 3;
+	cout << "Estimated frames per second : " << fps << endl;
+
+	grabFPS.release();
+
+}

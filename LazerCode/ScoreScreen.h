@@ -1,15 +1,21 @@
 #include "pch.h"
-//#include "driver.h"
 using namespace sf;
 
 class ScoreScreen
 {
 public:
-	bool ScoreWindow();
+	int ScoreWindow(RenderWindow& window);
 	ScoreScreen();
 	~ScoreScreen();
-	void DrawBackground(RenderTarget &RenderTarget);
-	int* ReadFile(int &count);
+	void DrawBackground(RenderTarget& RenderTarget);
+	vector<vector<int>> ReadFile(int& count);
+	void setMultiplayer(bool temp);
+	void setServerTime(const int temp);
+	void setClientTime(const int temp);
+	void setLevel(const int temp);
+	int getServerTime() { return ServerTime; }
+	int getClientTime() { return ClientTime; }
+	void EndGameTime();
 
 private:
 	Event windowEvent;
@@ -28,4 +34,8 @@ private:
 	Text Quit;
 	Text HighScores;
 	Text PlayerScores;
+	bool PlayMultiplayer;
+	int ServerTime;
+	int ClientTime;
+	int Level;
 };

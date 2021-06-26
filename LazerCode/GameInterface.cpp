@@ -1,29 +1,88 @@
 #include "pch.h"
 #include "GameInterface.h"
 
-#define VIDEO_POS_X 1152
-#define VIDEO_POS_Y 240
+GameInterface::GameInterface(int& _menu, objDet* odt, TcpSocket& TempSocket, Vector2f& Tempp2Position, Vector2f& TempprevPosition, char& TempconnectionType, bool tmul) {
 
-GameInterface::GameInterface(int& _menu, objDet* odt) {
-
-	pG = new prepGame();
+	mul = tmul;
+	pG = new prepGame(TempconnectionType, TempSocket, mul);
+	//p1.playerAni = new animate({ 100.0f,50.0f });
+	//p1.playerAni->update(1);
 	od = odt;
-	font.loadFromFile("Assets/Font/ponde___.ttf");
-	videoTxt.setFont(font);
-	videoTxt.setString("MOTION CAPTURE DISPLAY");
-	videoTxt.setStyle(sf::Text::Style::Underlined);
-	videoTxt.setCharacterSize(36);
+
+	int camera_device = 0;
+	odt->setFPS(camera_device);
+	odt->capture.open(camera_device);
+	keyboard = !(odt->capture.isOpened());
+
+
+
+	userInput = { false };
+
+	if (mul) {
+		socket = &TempSocket;
+		p2Position = &Tempp2Position;
+		prevPosition = &TempprevPosition;
+	}
+
 
 }
 
-void GameInterface::Draw(sf::RenderWindow& _window, float _elapsedTime) {
+bool GameInterface::Draw(sf::RenderWindow& _window, float _elapsedTime, bool update) {
 
-	input();
+	_window.draw(pG->backgroundS);
+
+	if (mul) {
+		Packet packet;
+		*prevPosition = p1.playerSprite.GetSprite("playerSprite").getPosition();
+
+
+		if (update)
+			if (input())
+				return true;
+
+		if (*prevPosition != p1.playerSprite.GetSprite("playerSprite").getPosition())
+		{
+			packet << p1.playerSprite.GetSprite("playerSprite").getPosition().x << p1.playerSprite.GetSprite("playerSprite").getPosition().y;
+			socket->send(packet);
+		}
+		socket->receive(packet);
+		if (packet >> p2Position->x >> p2Position->y)
+			p2.playerSprite.GetSprite("playerSprite").setPosition(*p2Position);
+
+	}
+	else
+		if (input())
+			return true;
+
+	if (userInput[4])
+		_window.draw(pG->oTxt);
+
+	else if (userInput[0])
+		_window.draw(pG->upTxt);
+
+	else if (userInput[1])
+		_window.draw(pG->downTxt);
+
+	else if (userInput[2])
+		_window.draw(pG->leftTxt);
+
+	else if (userInput[3])
+		_window.draw(pG->rightTxt);
+
+
 	drawMaze(_window);
-	drawVideo(_window);
-	p.playerS.DrawSprites(_window);
-}
+	p1.playerSprite.DrawSprites(_window);
+	if (mul)
+		p2.playerSprite.DrawSprites(_window);
 
+	//p1.playerAni->update(_elapsedTime);
+	//p1.playerAni->setdriection(p1.playerVec);
+	//p1.playerAni->draw(_window);
+	if (!keyboard)
+		drawVideo(_window);
+
+	return false;
+}
 
 void GameInterface::drawMaze(sf::RenderTarget& renderTarget)
 {
@@ -39,16 +98,10 @@ void GameInterface::drawMaze(sf::RenderTarget& renderTarget)
 
 void GameInterface::drawVideo(sf::RenderTarget& renderTarget)
 {
-	od->videoSprite.setPosition(VIDEO_POS_X, VIDEO_POS_Y);
-	videoTxt.setPosition(VIDEO_POS_X, VIDEO_POS_Y / 2);
+	od->videoSprite.setPosition(1150, 240);
 	renderTarget.draw(od->videoSprite);
-	renderTarget.draw(videoTxt);
+	renderTarget.draw(pG->videoTxt);
 }
-
-// Removes the player physics from the list of global physics objects
-//void GameInterface::RemovePlayerPhysics() {
-//	Physics::Remove(player.pObj);
-//}
 
 bool GameInterface::checkCol(COORD newPos)
 {
@@ -59,40 +112,71 @@ bool GameInterface::checkCol(COORD newPos)
 	return false;
 }
 
-void GameInterface::move(COORD newPos)
+bool GameInterface::move(COORD newPos)
 {
-	if (checkCol(newPos)) {
+	if (newPos.Y / 50 > 19)
+		return true;
 
-		p.pos.Y = newPos.Y;
-		p.pos.X = newPos.X;
+	else if (checkCol(newPos)) {
 
-		p.playerS.GetSprite("player").setPosition(p.pos.X, p.pos.Y);
+		p1.pos.Y = newPos.Y;
+		p1.pos.X = newPos.X;
+
+		//p1.playerVec.x = float(newPos.X);
+		//p1.playerVec.y = float(newPos.Y);
+
+		p1.playerSprite.GetSprite("playerSprite").setPosition(p1.pos.X, p1.pos.Y);
 	}
+
+	return false;
 }
 
-void GameInterface::input()
+bool GameInterface::input()
 {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 		exit(EXIT_SUCCESS);
 
-	std::array<bool, 5> userInput = od->runMotionDetect();
-	if (!userInput[4])
+	if (!keyboard)
 	{
-		//if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-		if (userInput[0])
-			move({ p.pos.X, short(p.pos.Y - 50) });
+		userInput = od->runMotionDetect(userInput);
+		if (!userInput[4] && od->motionDetectF.size() == 0)
+		{
+			if (userInput[0])
+				if (move({ p1.pos.X, short(p1.pos.Y - 50) }))
+					return true;
 
-		//if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-		if (userInput[1])
-			move({ p.pos.X, short(p.pos.Y + 50) });
+			if (userInput[1])
+				if (move({ p1.pos.X, short(p1.pos.Y + 50) }))
+					return true;
 
-		//if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-		if (userInput[2])
-			move({ short(p.pos.X - 50), p.pos.Y });
+			if (userInput[2])
+				if (move({ short(p1.pos.X - 50), p1.pos.Y }))
+					return true;
 
-		//if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-		if (userInput[3])
-			move({ short(p.pos.X + 50), p.pos.Y });
+			if (userInput[3])
+				if (move({ short(p1.pos.X + 50), p1.pos.Y }))
+					return true;
+		}
 	}
 
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::K))
+		keyboard = !keyboard;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+		if (move({ p1.pos.X, short(p1.pos.Y - 50) }))
+			return true;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+		if (move({ p1.pos.X, short(p1.pos.Y + 50) }))
+			return true;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+		if (move({ short(p1.pos.X - 50), p1.pos.Y }))
+			return true;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+		if (move({ short(p1.pos.X + 50), p1.pos.Y }))
+			return true;
+
+	return false;
 }
