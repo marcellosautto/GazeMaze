@@ -4,49 +4,46 @@
 #include "PrepGame.h"
 #include "objDet.h"
 #include "animation.h"
+#include "network.h"
+#include "characteranimation.h"
 
 // A class that stores the functions for drawing the 'play game' screen
 class GameInterface
 {
 private:
 
-	void drawVideo(sf::RenderTarget& renderTarget),
-		drawMaze(sf::RenderTarget& renderTarget);
+	void drawVideo(sf::RenderTarget& renderTarget), //draws video onto the screen
+		drawMaze(sf::RenderTarget& renderTarget), //draw maze on the screen
+		drawClock(sf::RenderTarget& renderTarget, steady_clock::time_point t1); //draws clock on the screen
 
-	bool move(COORD newPos),
-		checkCol(COORD newPos),
-		input();
+	bool move(COORD newPos), //moves player if it does not colide with a wall
+		checkCol(COORD newPos),//check if player will colide with a wall
+		input(sf::RenderWindow& _window),//checks/interpretes direction user wants to move the player
+		newLevel; //reads user input
 
-	bool mul = false;
-
-	objDet* od = NULL;
+	//creates instances of classes 
+	objDet* od = NULL; 
+	Network* network = NULL;
 	prepGame* pG = NULL;
-	TcpSocket* socket = NULL;
-	Vector2f* p2Position = NULL;
-	Vector2f* prevPosition = NULL;
-	char* connectionType = NULL;
-	std::array<bool, 5> userInput;
 
 public:
+	
+	GameInterface(int& _menu, objDet* odt, Network &networkT);//constructor
+	std::array<bool, 5> userInput; //user array of possible movements 
 
-	bool keyboard = false;
-	GameInterface(int& _menu, objDet* odt, TcpSocket& TempSocket, Vector2f& Tempp2Position, Vector2f& TempprevPosition, char& TempconnectionType, bool tmul);
-	bool Draw(sf::RenderWindow& _window, float _elapsedTime, bool update);
+	bool Draw(sf::RenderWindow& _window, float _elapsedTime, bool update, steady_clock::time_point t1),//draws player on screen and refreshs frame
+		completed;
 
-	struct player {
+	struct player {//player object
 
-		COORD pos = { 100,50 };
-
-		Vector2f playerVec = { 100.0f, 50.0f };
-		animate* playerAni;
-		SpriteManager playerSprite;
+		COORD pos = { 100,50 }; //player position
+		sf::Vector2f p_move = {100.0f, 50.0f};//position of annimation
+		animate* playerAni = NULL;//instance of animation
+		SpriteManager playerSprite;//player sprite
 
 		player()
 		{
-			playerSprite.CreateSprite("playerSprite", "Assets/Player/Player1.png");
-			playerSprite.GetSprite("playerSprite").setPosition(pos.X, pos.Y);
+			playerSprite.CreateSprite("playerSprite", "Assets/Player/eyeball_spritesheet.png");//creates player sprite
 		}
-
 	}p1, p2;
-
 };

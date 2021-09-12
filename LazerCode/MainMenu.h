@@ -2,15 +2,17 @@
 #include "pch.h"
 #include "Button.h"
 #include "SpriteManager.h"
+#include "GameInterface.h"
+#include "objDet.h"
+#include "network.h"
 
 // All functions for drawing the main menu
 
 class MainMenu {
 private:
 	sf::Font font;
-	sf::Text text;
 
-	sf::Text levelCountT;
+	sf::Text levelCountT, waitingT, laserEyesT, alreadySelectedTxt, levelT;
 	sf::Texture backGroundT;
 	sf::Sprite backgroundS;
 
@@ -18,20 +20,19 @@ private:
 	SpriteManager mng;
 
 	int* menu = nullptr;
-	int wait = 0;
+	int totalLevels;
 
 	sf::SoundBuffer clickB;
 	sf::Sound clickS;
 
-
-	int levelCount;
+	objDet* obDet = NULL;
+	GameInterface* gameInterface = NULL;
+	Network* network = NULL;
 
 public:
-	MainMenu(int& _menu);
-	int Draw(sf::RenderWindow& _window, int in);
-	void keyBoardIn(int in);
-	void switchControls();
-	~MainMenu();
+	MainMenu(int& _menu, objDet* obDet, GameInterface* gameInterface);//constructor
+	int Draw(sf::RenderWindow& _window, int totalLevels);//draws and updates frame
 
-	sf::Text alreadySelectedTxt;
+	void waitScreen(sf::RenderWindow& window, Network& networkT);//waiting screen
+	~MainMenu();//deconstructor
 };

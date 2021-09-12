@@ -1,25 +1,40 @@
 #include "pch.h"
 #include "prepGame.h"
 
-prepGame::prepGame(char& TempconnectionType, TcpSocket& Tempsocket, bool mul)
+prepGame::prepGame(Network& networkT)//constructor
 {
-	mazeS.resize(1);
+	network = &networkT;
+	mazeS.resize(1); //resizes sprite vector
 	mazeS.at(0).resize(0);
 
-	mazeV.resize(1);
+	mazeV.resize(1); //resizes maze vector
 	mazeV.at(0).resize(0);
 
+	//load sfml font
 	if (!Calibri.loadFromFile("Assets/Font/Calibri 400.ttf"))
 		errorMessageExit("Text Load Fail");
 
 	if (!Ponde.loadFromFile("Assets/Font/ponde___.ttf"))
 		errorMessageExit("Failed To Load Font");
 
+	if (!Atarian.loadFromFile("Assets/Font/SF Atarian System.ttf"))
+		errorMessageExit("Failed to load text.");
+
+	//Set sfml text
+	timeTxt.setFont(Atarian);
+	timeTxt.setCharacterSize(100);
+	timeTxt.setFillColor(Color::Red);
+	timeTxt.setPosition(1200, 50);
+
+	levelTxt.setFont(Atarian);
+	levelTxt.setCharacterSize(100);
+	levelTxt.setPosition(1200, 175);
+
 	videoTxt.setFont(Ponde);
 	videoTxt.setString("MOTION CAPTURE DISPLAY");
 	videoTxt.setStyle(sf::Text::Style::Underlined);
 	videoTxt.setCharacterSize(36);
-	videoTxt.setPosition(1152, 120);
+	videoTxt.setPosition(1152, 350);
 
 	rightTxt.setFont(Ponde);
 	leftTxt.setFont(Ponde);
@@ -39,41 +54,75 @@ prepGame::prepGame(char& TempconnectionType, TcpSocket& Tempsocket, bool mul)
 	downTxt.setCharacterSize(50);
 	oTxt.setCharacterSize(50);
 
-	rightTxt.setPosition(1400, 800);
-	leftTxt.setPosition(1400, 800);
-	upTxt.setPosition(1400, 800);
-	downTxt.setPosition(1400, 800);
-	oTxt.setPosition(1400, 800);
+	rightTxt.setPosition(1375, 950);
+	leftTxt.setPosition(1375, 950);
+	upTxt.setPosition(1375, 950);
+	downTxt.setPosition(1375, 950);
+	oTxt.setPosition(1375, 950);
 
-	for (int i = 0; i < hedgeSpriteCount; i++)
+	for (int i = 0; i < hedgeSpriteCount; i++) //loads and creates hedge sprites 
 		hedgeSpriteManager.CreateSprite(to_string(i), "Assets/MazeArt/Hedges/Hedge" + to_string(i) + ".png");
-
 	for (int i = 6; i < hedgeSpriteCount; i++)
 		hedgeSpriteManager.CreateSprite(to_string(i * 10 + 1), "Assets/MazeArt/Hedges/Hedge" + to_string(i) + "1.png");
-
 	hedgeSpriteManager.CreateSprite(to_string(62), "Assets/MazeArt/Hedges/Hedge62.png");
 	hedgeSpriteManager.CreateSprite(to_string(72), "Assets/MazeArt/Hedges/Hedge72.png");
-
 	hedgeSpriteManager.CreateSprite("path", "Assets/MazeArt/Path/Path.png");
 	hedgeSpriteManager.CreateSprite("line1", "Assets/MazeArt/Path/Line1.png");
 	hedgeSpriteManager.CreateSprite("line2", "Assets/MazeArt/Path/Line2.png");
 
-	for (int i = 0; i < playerSpriteCount; i++)
-		playerSprites.CreateSprite(to_string(i), "Assets/Player/Player" + to_string(i) + ".png");
-
+	//Loads Sprites 
 	if (!backgroundT.loadFromFile("Assets/Menus/menuBack.png"))
 		errorMessageExit("Texture Load Fail");
-
 	backgroundS.setTexture(backgroundT);
 
-	if (mul) {
-		connectionType = &TempconnectionType;
+	if (network->nO.multiplayerGame && network->gO.currentLevel() == 0) //Sends map from host to client / inverse 
+		setMultiplayer();
+	else if (!network->nO.multiplayerGame)
+		generateMaze(); //generates maze
 
-		socket = &Tempsocket;
-		socket->setBlocking(true);
-		char buffer[2000];
-		size_t received;
-		if (*connectionType == 's')
+	if (network->nO.multiplayerGame)//intializes mazeV
+	{
+		mazeV.clear();
+		for (int i = 0; i < network->gO.mazeTransferVector.at(0).size(); i++) {
+			mazeV.resize(mazeV.size() + 1);
+
+			for (int j = 0; j < network->gO.mazeTransferVector.at(0).at(i).size(); j++)
+				mazeV.at(i).emplace_back(network->gO.mazeTransferVector[network->gO.currentLevel()][i][j]);
+		}
+
+		outputTxt();
+	}
+	buildMaze();//builds the sprite maze
+}
+
+void prepGame::setMultiplayer()
+{
+	int M = 2 * m + 1;
+	int N = 2 * n + 1;
+	int a, b, c;
+	a = network->gO.totalLevels;
+	b = M;
+	c = N;
+	int k = 0;
+	mazeV.resize(M, vector<char>(N));
+	mazeV.at(0).resize(N);
+
+	Packet tempPacket;//waits for both players before continuing
+	network->nO.mapSocket.setBlocking(true);
+	tempPacket << true;
+	network->nO.mapSocket.send(tempPacket);
+	network->nO.mapSocket.receive(tempPacket);
+	network->nO.mapSocket.setBlocking(false);
+	char buffer[2000] = { 0 };
+	size_t received;
+
+	// The server will generate map(s) and then send it to the client
+	if (network->nO.connectionType == 's')
+	{
+		network->gO.mazeTransferVector.resize(a, vector< vector < char > >(b, vector<char>(c)));
+		string text = to_string(network->gO.totalLevels);
+		network->nO.mapSocket.send(text.c_str(), text.length() + 1);
+		for (int levelCount = 0; levelCount < network->gO.totalLevels; levelCount++)
 		{
 			string text = "";
 			generateMaze(); //creates random maze, saves it to txt file Assets/mazeTxt.txt
@@ -82,46 +131,38 @@ prepGame::prepGame(char& TempconnectionType, TcpSocket& Tempsocket, bool mul)
 				for (int j = 0; j < mazeV.at(i).size(); j++)
 				{
 					text += mazeV.at(i).at(j);
+					network->gO.mazeTransferVector[levelCount][i][j] = mazeV.at(i).at(j);
+
 				}
 			}
-			socket->send(text.c_str(), text.length() + 1);
+			network->nO.mapSocket.send(text.c_str(), text.length() + 1);
 		}
-		if (*connectionType == 'c')
+	}
+	// The client will receive the map and use it for their maze game
+	if (network->nO.connectionType == 'c')
+	{
+		network->nO.mapSocket.setBlocking(true);
+		network->nO.mapSocket.receive(buffer, sizeof(buffer), received);
+		network->gO.totalLevels = int(buffer[0]) - 48;
+		a = network->gO.totalLevels;
+		network->gO.mazeTransferVector.resize(a, vector< vector < char > >(b, vector<char>(c)));
+		for (int levelCount = 0; levelCount < network->gO.totalLevels; levelCount++)
 		{
-			socket->receive(buffer, sizeof(buffer), received);
-			if (received > 0)
-			{
-				cout << "Received map download from server." << endl;
-			}
-
-			int M = 2 * m + 1;
-			int N = 2 * n + 1;
-			mazeV.resize(M, vector<char>(N));
-			mazeV.at(0).resize(N);
-
-			int k = 0;
+			network->nO.mapSocket.setBlocking(true);
+			network->nO.mapSocket.receive(buffer, sizeof(buffer), received);
+			k = 0;
 			for (int i = 0; i < mazeV.size(); i++)
 			{
 				for (int j = 0; j < mazeV.at(i).size(); j++)
 				{
-					mazeV.at(i).at(j) = buffer[k];
+					network->gO.mazeTransferVector[levelCount][i][j] = buffer[k];
 					k++;
 				}
 			}
-			outputTxt();
 		}
 	}
-	else
-		generateMaze();
-
-	buildMaze();
+	network->gO.levelsRemaining = network->gO.totalLevels;
 }
-
-//prepGame::~prepGame()
-//{
-//	delete connectionType;
-//	delete socket;
-//}
 
 void prepGame::buildMaze()
 {
@@ -168,7 +209,7 @@ void prepGame::inputTxt()
 	inF.close();//close inF
 }
 
-void prepGame::outputTxt()
+void prepGame::outputTxt()//outputs maze to a text file
 {
 	ofstream mazeTxt;
 	mazeTxt.open("Assets/mazeTxt.txt");
@@ -182,7 +223,7 @@ void prepGame::outputTxt()
 	mazeTxt.close();
 }
 
-int prepGame::findSurrounding(int y, int x)
+int prepGame::findSurrounding(int y, int x)//finds surroundings of a sprite to pick a sprite for the maze
 {
 	int checker = 0;
 
@@ -297,7 +338,6 @@ int prepGame::getIdx(int x, int y, vector < pair<int, pair<int, int> > > cell_li
 		if (cell_list[i].second.first == x && cell_list[i].second.second == y)
 			return cell_list[i].first;
 	}
-	cout << "getIdx() couldn't find the index!" << endl;
 	return -1;
 }
 

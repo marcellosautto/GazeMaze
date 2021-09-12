@@ -1,178 +1,184 @@
 #include "pch.h"
 #include "MultiplayerScreen.h"
 
-
-MultiplayerScreen::MultiplayerScreen(sf::IpAddress ip)
+MultiplayerScreen::MultiplayerScreen(Network& networkT)//constructor
 {
+	showIP = false;
 	if (!backGroundT.loadFromFile("Assets/Menus/menuBack.png"))
 		errorMessageExit("Failed To Load Texture");
 
 	if (!font.loadFromFile("Assets/Font/ponde___.ttf"))
 		errorMessageExit("Failed To Load Font");
+	if (!font2.loadFromFile("Assets/Font/Calibri 400.ttf"))
+		errorMessageExit("Failed To Load Font");
+
+	network = &networkT;
+	uipSS << network->nO.userIP;//sets ip
 
 	backgroundS.setTexture(backGroundT);
+	//creates buttons
+	buttons.push_back(new UIButton("Assets/Menus/local.png", 700, 850, 0.5f));
+	buttons.push_back(new UIButton("Assets/Menus/Host.png", 150, 850, 0.5f));
+	buttons.push_back(new UIButton("Assets/Menus/client.png", 1250, 850, 0.5f));
+	buttons.push_back(new UIButton("Assets/Menus/start.png", 150, 650, 0.5));
+	buttons.push_back(new UIButton("Assets/Menus/BackToMenu.png", 1250, 650, 0.5f));
+	buttons.push_back(new UIButton("Assets/Menus/plus.png", 1750, 500, 0.15f));
+	buttons.push_back(new UIButton("Assets/Menus/minus.png", 1500, 500, 0.15f));
+	buttons.push_back(new UIButton("Assets/Menus/hide_ip.png", 700, 650, 0.5f));
 
-	buttons.push_back(new UIButton("Assets/Menus/local.png", 610, 600, 2.5));
-	buttons.push_back(new UIButton("Assets/Menus/Host.png", 610, 700, 2.5));
-	buttons.push_back(new UIButton("Assets/Menus/client.png", 610, 800, 2.5));
-	buttons.push_back(new UIButton("Assets/Menus/start.png", 610, 900, 2.5));
-	counter = 5;
+	//builds sfml text
+	levelCountT.setFont(font);
+	levelCountT.setCharacterSize(100);
+	levelCountT.setPosition(1650, 500);
+	levelCountT.setFillColor(sf::Color::White);
 
 	IPT.setFont(font);
 	IPT.setCharacterSize(100);
-	IPT.setPosition(100, 100);
+	IPT.setPosition(10, 50);
 
 	connectedT.setFont(font);
 	connectedT.setCharacterSize(100);
-	connectedT.setPosition(100, 300);
+	connectedT.setPosition(100, 350);
 	connectedT.setString("Connected!");
 
 	failedT.setFont(font);
 	failedT.setCharacterSize(100);
-	failedT.setPosition(100, 300);
+	failedT.setPosition(100, 350);
 	failedT.setString("Connection Failed!");
 
 	waitingT.setFont(font);
-	waitingT.setCharacterSize(100);
-	waitingT.setPosition(100, 300);
+	waitingT.setCharacterSize(84);
+	waitingT.setPosition(100, 350);
 	waitingT.setString("Waiting For Other Player To Press Play");
 
-	waitingT.setFont(font);
-	waitingT.setCharacterSize(100);
-	waitingT.setPosition(100, 300);
-	waitingT.setString("Waiting For Connection");
+	localIPT.setFont(font);
+	localIPT.setCharacterSize(100);
+	localIPT.setPosition(10, 200);
+	localIPT.setString("Your IP:" + network->nO.userIP.toString());
 
-	uipSS << ip;
+	startFailT.setFont(font);
+	startFailT.setCharacterSize(84);
+	startFailT.setPosition(100, 350);
+	startFailT.setString("Connect To Another Player, \n\t Then Press Start");
 
-	string ipsizes = ip.toString();
-	ipSize = ipsizes.size();
-	wait = 0;
+	blink.setFont(font);
+	blink.setCharacterSize(100);
+	blink.setString("_");
 
+	ipCover.setSize(sf::Vector2f(150, 100));
+
+	levelT.setFont(font);
+	levelT.setCharacterSize(40);
+	levelT.setPosition(1500, 450);
+	levelT.setString("Level Count");
+
+	blinkTime = 0;
+	lastKey = 0;
 }
 
-void MultiplayerScreen::Draw(sf::RenderWindow& window, sf::TcpListener& listener, string& Username, sf::TcpSocket& socket, sf::TcpSocket& socket2, sf::IpAddress& ip, sf::Packet& tempPacket,int& menu, int in, char &connectionType)
+void MultiplayerScreen::Draw(sf::RenderWindow& window, int& menu, int in)
 {
 	window.draw(backgroundS);
 
-	if (wait == 0) {
-		keyBoardIn(in);
-		wait = 22;
-	}
-	else if (wait > 0)
-		wait--;
+	keyBoardIn(in);//takes keyboard input
 
-	if (buttons[0]->IsPressed()) {
-	
-		window.draw(waitingT);
-		window.display();
-		std::string ipS = ip.toString();
+	if (buttons[0]->IsPressed())//search for local host
+		network->nO.prepLocalHostConnect();
 
-		ipS.pop_back();
-		ipS.pop_back();
-		//ipS.pop_back();
+	else if (buttons[1]->IsPressed())//hosts server
+		network->nO.prepHostConnect();
 
-		for (int i = 0; i < 1000; i++) {
-			ostringstream ipSS;
-			
-			if(i > 99)
-				ipSS << ipS << i;
-			else if (i > 9)
-				ipSS << ipS << "0" << i;
-			else
-				ipSS << ipS << "00" << i;
+	else if (buttons[2]->IsPressed())//join server entered in screen
+		network->nO.prepclientConnect(uipSS.str());
 
-			cout << ipSS.str() << endl;
-
-			ip = ipSS.str();
-			sf::Socket::Status status = socket.connect(ip,2000, sf::milliseconds(10));
-			if (status == sf::Socket::Done) {
-				Username = "Client";
-				message[0] = 600;
-				connectionType = 'c';
-				break;
-			}
-			socket2.connect(ip, 2001);
-			
-			if(i == 999)
-				message[1] = 600;
-		}
-	}
-	if (buttons[1]->IsPressed()) {
-		window.draw(waitingT);
-		window.display();
-		listener.listen(2000);
-		sf::Socket::Status status = listener.accept(socket);
-		if (status == sf::Socket::Done) {
-			//  Can ask user for Username, will be used to display score on scoreboard
-			Username = "Server host";
-			message[0] = 600;
-			connectionType = 's';
-		}
-		else
-			message[1] = 600;
-		listener.listen(2001);
-		listener.accept(socket2);
-
-	}
-	if (buttons[2]->IsPressed()) {
-
-		ip = uipSS.str();
-		window.draw(waitingT);
-		window.display();
-		sf::Socket::Status status = socket.connect(ip, 2000, sf::milliseconds(5000));
-		if (status == sf::Socket::Done) {
-			Username = "Client";
-			message[0] = 600;
-			connectionType = 'c';
-		}
-		else 
-			message[1] = 600;
-		socket2.connect(ip, 2001);
-		//  Can ask user for Username, will be used to display score on scoreboard
-	}
-	if (buttons[3]->IsPressed() && Username != " ") {
-		message[2] = 600;
-		socket.setBlocking(true);
-		tempPacket << true;
-		socket.send(tempPacket);
-		socket.receive(tempPacket);
-		socket.setBlocking(false);
+	else if (buttons[3]->IsPressed() && network->nO.connectionType != ' ') {//if start is pressed and player has successsfully connected to another
+		network->nO.startMultiplayer();
 		menu = 5;
 	}
-	buttons[0]->DrawButton(window);
+	else if (buttons[3]->IsPressed())//start is pressed and player is not connected to another
+		network->nO.msMessage[3] = 600;
+
+	else if (buttons[4]->IsPressed())//exit is pressed
+		menu = 0;
+	else if (buttons[5]->IsPressed() && network->gO.totalLevels < 9)//increase levels
+		network->gO.totalLevels++;
+	else if (buttons[6]->IsPressed() && network->gO.totalLevels > 1)//cecrease levels
+		network->gO.totalLevels--;
+	else if (buttons[7]->IsPressed()) //show/hide ip on screen
+		showIP = !showIP;
+
+	buttons[0]->DrawButton(window);//draws buttons on screeb
 	buttons[1]->DrawButton(window);
 	buttons[2]->DrawButton(window);
 	buttons[3]->DrawButton(window);
+	buttons[4]->DrawButton(window);
+	buttons[5]->DrawButton(window);
+	buttons[6]->DrawButton(window);
+	buttons[7]->DrawButton(window);
 
-	if (message[0] > 0) {
+	//shows messages for 600 frames
+	if (network->nO.msMessage[0] > 0) {
 		window.draw(connectedT);
-		message[0]--;
+		network->nO.msMessage[0]--;
 	}
-	else if (message[1] > 0) {
+	else if (network->nO.msMessage[1] > 0) {
 		window.draw(failedT);
-		message[1]--;
+		network->nO.msMessage[1]--;
 	}
-	else if (message[2] > 0) {
+	else if (network->nO.msMessage[2] > 1) {
 		window.draw(waitingT);
-		message[2]--;
+		network->nO.msMessage[2]--;
+	}
+	else if (network->nO.msMessage[3] > 1) {
+		window.draw(startFailT);
+		network->nO.msMessage[3]--;
 	}
 
-	IPT.setString(uipSS.str());
-	window.draw(IPT);
-}
+	IPT.setString("Host IP:" + uipSS.str());
 
+	if (time(&blinkTime) % 2) {//shows blinking line under ip
+		blink.setPosition(uipSS.str().size() * 81 + 600, 75);
+		window.draw(blink);
+	}
+
+	levelCountT.setString(to_string(network->gO.totalLevels));
+	window.draw(levelCountT);
+	window.draw(levelT);
+	window.draw(localIPT);
+	window.draw(IPT);
+
+	if (!showIP) {//shows ip or hides it with rectangle sprites
+		if (uipSS.str().size() > 0)
+			for (int i = 0; i < uipSS.str().size() - 1; i++) {
+
+				ipCover.setPosition(i * 81 + 600, 50);
+				window.draw(ipCover);
+			}
+
+		for (int i = 0; i < network->nO.userIP.toString().size(); i++) {
+
+			ipCover.setPosition(i * 81 + 600, 200);
+			window.draw(ipCover);
+		}
+	}
+}
 
 void MultiplayerScreen::keyBoardIn(int in)//determines keyboard input and runs functions
 {
-	if (in == 8) {//if backspace was pressed delete last number input
-		string temp = uipSS.str();
-		temp.pop_back();
-		uipSS.clear();
-		uipSS.str("");
-		uipSS << temp;
-	}
+	if (lastKey != in) {
+		lastKey = in;
+		if (in == 8 && uipSS.str().size() > 0) {//if backspace was pressed delete last number input
+			string temp = uipSS.str();
+			temp.pop_back();
+			uipSS.clear();
+			uipSS.str("");
+			uipSS << temp;
+		}
 
-	else if ((in < 58) && (in > 47) && uipSS.str().size() < ipSize) //If number is entered
-		uipSS << in - 48;
-	
+		else if ((in < 58) && (in > 47) && uipSS.str().size() < 15) //If number is entered
+			uipSS << in - 48;
+
+		else if (in == 46 && uipSS.str().size() < 15)//if period was entered
+			uipSS << '.';
+	}
 }

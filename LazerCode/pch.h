@@ -38,8 +38,12 @@
 #include <thread>
 #include <chrono>
 #include <algorithm>
+#include <ratio>
+#include <ctime>
+#include <Lmcons.h>
 
 using namespace std;
+using namespace std::chrono;
 
 //Global Commands
 #ifndef GUARD_H

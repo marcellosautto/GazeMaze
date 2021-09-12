@@ -9,8 +9,11 @@ protected:
 	bool pState = false;
 	bool isPressed = false;
 	bool wasPressed = false;
+	
 	SpriteManager mng;
 	sf::Color color = sf::Color(100, 100, 100);
+	sf::SoundBuffer playClickB, defaultClickB;
+	sf::Sound playClickS, defaultClickS;
 
 public:
 	UIButton(std::string _filepath, float _x, float _y, float _scale = 1);

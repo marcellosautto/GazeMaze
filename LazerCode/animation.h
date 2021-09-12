@@ -8,13 +8,13 @@ class animate
 public:
 
 	//Constructor
-	animate(const sf::Vector2f& pos);
+	animate(const sf::Vector2f& pos, bool isMC);
 
 	void draw(sf::RenderTarget& rt) const;
+	void move_player(const sf::Vector2f& pos);
+	void update(const float dt);
 
-	void setdriection(const sf::Vector2f& dir);
-
-	void update(float dt);
+	
 
 
 private:
@@ -27,13 +27,11 @@ private:
 		count
 	};
 
-	float speed = 400.0f;
 
-	sf::Vector2f pos;
-	sf::Vector2f vel = { 0.0f,0.0f };
+	sf::Vector2f pos = { 100.0f,50.0f };
 	sf::Texture texture;
 	sf::Sprite sprite;
-
+	bool isMoving = true;
 	characteranimation animation[int(animationindex::count)];
 	animationindex curAnimation = animationindex::walkingdown;
 };

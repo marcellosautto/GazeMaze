@@ -5,14 +5,14 @@
 // Stores and handles the texture frames from a spritesheet
 class characteranimation {
 public:
+	
 	characteranimation();
-
-	characteranimation(int x, int y, int width, int height);
+	characteranimation(int x, int y, int width, int height, bool isMP);
 	void SpriteApplication(sf::Sprite& s)const;
-	void updatesprite(float dt);
+	void updatesprite(const float dt);
 private:
 	static constexpr int nFrames = 3;
-	float holdTime = 1.0f;
+
 	sf::Texture texture;
 	sf::IntRect frames[nFrames];
 	int iFrame = 0;

@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="SFML">
+      <UniqueIdentifier>{d57cc254-fa34-41c4-b061-537a48c21d2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SFML Header Files">
+      <UniqueIdentifier>{4d922adf-c39c-4afc-b0b1-8fd29827db4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCV">
+      <UniqueIdentifier>{44cb2202-d53e-4e16-afe9-5ee2a7f37414}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SFML Screen Header Files">
+      <UniqueIdentifier>{84b3dc49-932d-481d-b00b-7f032971dad9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SFML Screen">
+      <UniqueIdentifier>{de2762dc-2603-422d-bfc3-83a4230a01ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Precompiled Header">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="driver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Precompiled Header</Filter>
+    </ClCompile>
+    <ClCompile Include="globalCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteManager.cpp">
+      <Filter>SFML</Filter>
+    </ClCompile>
+    <ClCompile Include="animation.cpp">
+      <Filter>SFML</Filter>
+    </ClCompile>
+    <ClCompile Include="Button.cpp">
+      <Filter>SFML</Filter>
+    </ClCompile>
+    <ClCompile Include="characteranimation.cpp">
+      <Filter>SFML</Filter>
+    </ClCompile>
+    <ClCompile Include="prepGame.cpp">
+      <Filter>SFML</Filter>
+    </ClCompile>
+    <ClCompile Include="MotionControl.cpp">
+      <Filter>OpenCV</Filter>
+    </ClCompile>
+    <ClCompile Include="ControlScreen.cpp">
+      <Filter>SFML Screen</Filter>
+    </ClCompile>
+    <ClCompile Include="MainMenu.cpp">
+      <Filter>SFML Screen</Filter>
+    </ClCompile>
+    <ClCompile Include="GameInterface.cpp">
+      <Filter>SFML Screen</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiplayerScreen.cpp">
+      <Filter>SFML Screen</Filter>
+    </ClCompile>
+    <ClCompile Include="ScoreScreen.cpp">
+      <Filter>SFML Screen</Filter>
+    </ClCompile>
+    <ClCompile Include="network.cpp">
+      <Filter>SFML</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Precompiled Header</Filter>
+    </ClInclude>
+    <ClInclude Include="driver.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteManager.h">
+      <Filter>SFML Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="animation.h">
+      <Filter>SFML Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Button.h">
+      <Filter>SFML Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="characteranimation.h">
+      <Filter>SFML Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="objDet.h">
+      <Filter>OpenCV</Filter>
+    </ClInclude>
+    <ClInclude Include="PrepGame.h">
+      <Filter>SFML Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameInterface.h">
+      <Filter>SFML Screen Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ControlScreen.h">
+      <Filter>SFML Screen Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainMenu.h">
+      <Filter>SFML Screen Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiplayerScreen.h">
+      <Filter>SFML Screen Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScoreScreen.h">
+      <Filter>SFML Screen Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="network.h">
+      <Filter>SFML Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

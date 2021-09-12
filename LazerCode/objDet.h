@@ -6,61 +6,56 @@
 class objDet {
 
 public:
+	objDet(int argc, const char** argv, bool& threadWaitT, string& waitMessageTT, bool keyboard);
 
-	objDet(int argc, const char** argv);
+	std::array<bool, 5> runMotionDetect(std::array<bool, 5> userInput, sf::RenderWindow& _window);
 
-	//driver
-	std::array<bool, 5> runMotionDetect(std::array<bool, 5> userInput);
+	bool cameraSwitch(bool useKeyboard), //switch camera on and off
+		isCalibrated, //tells if motions controls are calibrated or not
+		keyboard; //current user controls
 
-	bool calibrate(sf::RenderWindow& _window);
-	bool cameraSwitch(bool useKeyboard);
-	void detectMotionHand(cv::Mat frame);
-	void setFPS(int cam_device);
+	bool* threadWait = NULL;
+	string* waitMessageT = NULL;
 
-	sf::Sprite videoSprite;
-	std::vector<cv::Point2d> motionDetectF;
-	cv::VideoCapture capture;
+	void setFPS(int& movementsPerSecondRef), //sets movements per second based on camera fps
+		resetCalibration(); //reset calibration variables
 
+	sf::Sprite videoSprite; //contains sprite used to display video
+	std::vector<cv::Point2d> motionDetectF; //holds frames in between movements
+	cv::VideoCapture capture; //used to capture frames from camera
+
+	//used for SFX when switching controls
 	sf::SoundBuffer switchToKeyboardB, switchToMotionB;
 	sf::Sound switchToKeyboardS, switchToMotionS;
 
-
-
+	int movementsPerSecond;
+	sf::Sprite pregameBGSprite; //background sprite
 
 private:
 
-	int fps;
-	int movementsPerSecond;
-	char lastDirectionF;
-	bool justAttacked;
+	
+	int fps, camera_device;
+
 	cv::Rect originRect;
 	cv::Point originPoint;
 
-	sf::Image videoImg;
-	sf::Texture videoTexture;
-
-	sf::Image pregameBGIMG;
-	sf::Texture pregameBGTexture;
-	sf::Sprite pregameBGSprite;
-
-
-	std::vector<int> scaleInc;
-
-	std::array<bool, 5> movements;
-	std::array<bool, 5> calibrationArray;
-
-	sf::Text videoTxt;
 	sf::Font font_ponde;
 
-	sf::Text pregame_origin_text;
-	sf::Text pregame_up_text;
-	sf::Text pregame_down_text;
-	sf::Text pregame_left_text;
-	sf::Text pregame_right_text;
+	sf::Image videoImg;
+	sf::Texture videoTexture, pregameBGTexture;
+
+	std::array<bool, 5> movements, calibrationArray;
+
+	sf::Text videoTxt,
+		pregame_origin_text,
+		pregame_up_text,
+		pregame_down_text,
+		pregame_left_text,
+		pregame_right_text, 
+		recal_txt;
+
+	cv::Mat testFrame;
 
 	sf::SoundBuffer  leftDetB, rightDetB, upDetB, downDetB, oriDetB, failB, succB;
 	sf::Sound leftDetS, rightDetS, upDetS, downDetS, oriDetS, failS, succS;
-	//cv::Ptr<cv::BackgroundSubtractor> pBackSub;
-	//cv::Mat getMedian(std::vector<cv::Mat> vec);
-	//int calcMedian(vector<int>elements);
 };

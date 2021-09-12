@@ -7,6 +7,15 @@ UIButton::UIButton(std::string _filepath, float _x, float _y, float _scale) {
 	sf::Sprite& sprite = mng.GetSprite("button");
 	sprite.setPosition(_x, _y);
 	sprite.setScale(_scale, _scale);
+	
+	if (!playClickB.loadFromFile("Assets/Audio/p_click.wav"))
+		errorMessageExit("Sound Load Fail");
+
+	if (!defaultClickB.loadFromFile("Assets/Audio/click.wav"))
+		errorMessageExit("Sound Load Fail");
+
+	playClickS.setBuffer(playClickB);
+	defaultClickS.setBuffer(defaultClickB);
 }
 bool UIButton::IsPressed() {
 	// returns true only when the button is released
@@ -33,6 +42,10 @@ void UIButton::DrawButton(sf::RenderWindow& _window) {
 	// Visually change the color of the button when it is pressed
 	if (isPressed) {
 		mng.GetSprite("button").setColor(color);
+		if (mng.GetSprite("button").getPosition() == sf::Vector2f(380, 400))
+			playClickS.play();
+		else
+			defaultClickS.play();
 	}
 	else {
 		mng.GetSprite("button").setColor(sf::Color::White);

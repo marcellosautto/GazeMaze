@@ -1,41 +1,44 @@
 #include "pch.h"
+#include "Button.h"
+#include "network.h"
 using namespace sf;
 
 class ScoreScreen
 {
 public:
-	int ScoreWindow(RenderWindow& window);
-	ScoreScreen();
-	~ScoreScreen();
-	void DrawBackground(RenderTarget& RenderTarget);
-	vector<vector<int>> ReadFile(int& count);
+	int ScoreWindow(RenderWindow& window, int levelCount, int& menu, bool &advance);
+	ScoreScreen(Network& networkT);
+	vector<vector<double>> ReadFile(int& count);
 	void setMultiplayer(bool temp);
-	void setServerTime(const int temp);
-	void setClientTime(const int temp);
+	void setServerTime(const double temp);
+	void setClientTime(const double temp);
 	void setLevel(const int temp);
-	int getServerTime() { return ServerTime; }
-	int getClientTime() { return ClientTime; }
-	void EndGameTime();
+	double getServerTime() { return ServerTime; }
+	double getClientTime() { return ClientTime; }
+	void UpdateScoreScreen();
+	void recordScore(double MazeTime);
+	void setRecentLevel(int temp);
+	Sound trumpSound;
 
 private:
 	Event windowEvent;
-	Texture Background;
-	Texture HighScoreMenuScreen;
+	Texture Background, HighScoreMenuScreen;
+	int RecentLevel;
 
 	Sprite SpriteBackground;
 	Font font;
 
-	RectangleShape MainMenuButton;
-	RectangleShape MazeGameButton;
-	RectangleShape QuitButton;
+	SoundBuffer trumpBuf;
 
-	Text MainMenu;
-	Text MazeGame;
-	Text Quit;
-	Text HighScores;
-	Text PlayerScores;
+	std::vector<UIButton*> buttons;
+
+	Text MainMenu, MazeGame, Quit, HighScores, PlayerScores, levelCountT, levelT;
 	bool PlayMultiplayer;
-	int ServerTime;
-	int ClientTime;
-	int Level;
+	//char connectionType;
+	double ServerTime, ClientTime;
+	int Level, lastLevelPlayed;
+	bool ModifyScores;
+	string StringText;
+
+	Network* network = NULL;
 };
